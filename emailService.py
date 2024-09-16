@@ -15,7 +15,7 @@ def get_data_from_db():
         database='cessi'
     )
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM email_test WHERE email IS NOT NULL")
+    cursor.execute("SELECT * FROM main WHERE email IS NOT NULL AND send = 0 limit 10")
     data = cursor.fetchall()
     cursor.close()
     conn.close()
@@ -24,22 +24,55 @@ def get_data_from_db():
 def send_emails(data):
     try:
         with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
-            server.login(SENDER_EMAIL, SENDER_PASSWORD)  # Iniciar sesión
+            server.login(SENDER_EMAIL, SENDER_PASSWORD) 
 
+            ids = []
             for d in data:
-                email_dest = d[1]
-                empresa = d[2]  # Asegúrate de que el índice sea el correcto
-                body = f"Este es el cuerpo del correo electrónico que se enviará a {empresa}."
+                ids.append(d[0])
+                email_test = d[1]
+                empresa = d[2].capitalize() 
+                body = f"""\
+            Estimado/a,
 
+            Me comunico con ustedes para expresar mi interés en una vacante de programador en {empresa}. 
+            Adjunto mi currículum y el enlace a mi portafolio web, donde detallo mi experiencia laboral, habilidades y proyectos anteriores.
+
+            Estoy a disposición para coordinar una entrevista o llamada telefónica en caso de que requiera más información.
+
+            Atentamente,
+            Lionel Cassar
+            https://lionelcassar.info/
+            """
                 msg = EmailMessage()
                 msg.set_content(body)
-                msg['Subject'] = "Asunto del correo"
+                msg['Subject'] = f"""Solicitud de empleo en {empresa}"""
                 msg['From'] = SENDER_EMAIL
-                msg['To'] = email_dest
+                msg['To'] = email_test
+            
+                pdf_path = './Lionel Cassar - Desarrollador Full-stack.pdf'
+                with open(pdf_path, 'rb') as f:
+                    pdf_data = f.read()
+                    msg.add_attachment(pdf_data, maintype='application', subtype='pdf', filename='lionel_cassar_desarrollador_full_stack.pdf')
+                
+                server.send_message(msg)  
+                
+        conn = mysql.connector.connect(
+            host='localhost',
+            user='root',
+            password='root',
+            database='cessi'
+        )
+        cursor = conn.cursor()
+        ids_placeholder = ', '.join(['%s'] * len(ids))
 
-                server.send_message(msg)  # Enviar el correo
+        update_query = f"UPDATE main SET send = 1 WHERE id IN ({ids_placeholder})"
+        cursor.execute(update_query, tuple(ids))
 
-            print("Todos los correos han sido enviados correctamente.")
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        print("Todos los correos han sido enviados correctamente.")
         
     except smtplib.SMTPAuthenticationError:
         print("Error de autenticación. Verifica tus credenciales.")
