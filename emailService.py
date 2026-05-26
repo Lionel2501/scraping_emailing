@@ -1,85 +1,100 @@
+from pathlib import Path
 import mysql.connector
 import smtplib
 from email.message import EmailMessage
 
-SMTP_SERVER = 'smtp.hostinger.com'
-SMTP_PORT = 465
-SENDER_EMAIL = 'contact@lionelcassar.info'
-SENDER_PASSWORD = 'Hubble2024!'
+from mail_config import get_smtp_config
+
+
+SMTP_SERVER, SMTP_PORT, SENDER_EMAIL, SENDER_PASSWORD = get_smtp_config()
+PDF_PATH = Path(__file__).resolve().parent / "Lionel Cassar - Desarrollador Full-stack.pdf"
+
 
 def get_data_from_db():
     conn = mysql.connector.connect(
-        host='localhost',
-        user='root',
-        password='root',
-        database='cessi'
+        host="localhost",
+        user="root",
+        password="root",
+        database="cessi",
     )
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM main WHERE email IS NOT NULL AND send = 0 limit 10")
+    cursor.execute("SELECT * FROM main WHERE email IS NOT NULL AND send = 0 LIMIT 10")
     data = cursor.fetchall()
     cursor.close()
     conn.close()
     return data
 
+
 def send_emails(data):
+    ids = []
+
     try:
         with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
-            server.login(SENDER_EMAIL, SENDER_PASSWORD) 
+            server.login(SENDER_EMAIL, SENDER_PASSWORD)
 
-            ids = []
-            for d in data:
-                ids.append(d[0])
-                email_test = d[1]
-                empresa = d[2].capitalize() 
+            for row in data:
+                ids.append(row[0])
+                recipient_email = row[1]
+                empresa = row[2].capitalize()
                 body = f"""\
-            Estimado/a,
+Estimado/a,
 
-            Me comunico con ustedes para expresar mi interés en una vacante de programador en {empresa}. 
-            Adjunto mi currículum y el enlace a mi portafolio web, donde detallo mi experiencia laboral, habilidades y proyectos anteriores.
+Me comunico con ustedes para expresar mi interes en una vacante de programador en {empresa}.
+Adjunto mi curriculum donde detallo mi experiencia laboral, habilidades y proyectos anteriores.
 
-            Estoy a disposición para coordinar una entrevista o llamada telefónica en caso de que requiera más información.
+Estoy a disposicion para coordinar una entrevista o llamada telefonica en caso de que requiera mas informacion.
 
-            Atentamente,
-            Lionel Cassar
-            https://lionelcassar.info/
-            """
+Atentamente,
+Lionel Cassar
+"""
                 msg = EmailMessage()
                 msg.set_content(body)
-                msg['Subject'] = f"""Solicitud de empleo en {empresa}"""
-                msg['From'] = SENDER_EMAIL
-                msg['To'] = email_test
-            
-                pdf_path = './Lionel Cassar - Desarrollador Full-stack.pdf'
-                with open(pdf_path, 'rb') as f:
-                    pdf_data = f.read()
-                    msg.add_attachment(pdf_data, maintype='application', subtype='pdf', filename='lionel_cassar_desarrollador_full_stack.pdf')
-                
-                server.send_message(msg)  
-                
+                msg["Subject"] = f"Solicitud de empleo en {empresa}"
+                msg["From"] = SENDER_EMAIL
+                msg["To"] = recipient_email
+
+                with PDF_PATH.open("rb") as pdf_file:
+                    pdf_data = pdf_file.read()
+                    msg.add_attachment(
+                        pdf_data,
+                        maintype="application",
+                        subtype="pdf",
+                        filename="lionel_cassar_desarrollador_full_stack.pdf",
+                    )
+
+                server.send_message(msg)
+
+        if not ids:
+            print("No hay emails para enviar.")
+            return
+
         conn = mysql.connector.connect(
-            host='localhost',
-            user='root',
-            password='root',
-            database='cessi'
+            host="localhost",
+            user="root",
+            password="root",
+            database="cessi",
         )
         cursor = conn.cursor()
-        ids_placeholder = ', '.join(['%s'] * len(ids))
-
+        ids_placeholder = ", ".join(["%s"] * len(ids))
         update_query = f"UPDATE main SET send = 1 WHERE id IN ({ids_placeholder})"
         cursor.execute(update_query, tuple(ids))
-
         conn.commit()
         cursor.close()
         conn.close()
 
         print("Todos los correos han sido enviados correctamente.")
-        
+
     except smtplib.SMTPAuthenticationError:
-        print("Error de autenticación. Verifica tus credenciales.")
+        print("Error de autenticacion. Verifica tus credenciales SMTP.")
     except smtplib.SMTPConnectError:
-        print("Error de conexión al servidor SMTP. Verifica el servidor y el puerto.")
-    except Exception as e:
-        print(f"Ocurrió un error: {e}")
+        print("Error de conexion al servidor SMTP. Verifica el servidor y el puerto.")
+    except FileNotFoundError:
+        print(f"PDF no encontrado: {PDF_PATH}")
+    except ValueError as error:
+        print(str(error))
+    except Exception as error:
+        print(f"Ocurrio un error: {error}")
+
 
 if __name__ == "__main__":
     data = get_data_from_db()
