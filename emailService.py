@@ -41,7 +41,9 @@ Estimado/a,
 
 Espero que se encuentre bien.
 
-Me gustaría expresar mi interés en oportunidades como desarrollador dentro de {empresa}. Soy Full Stack Developer con experiencia en PHP/Laravel, JavaScript, React, Next.js y desarrollo de sistemas web.
+Me gustaría expresar mi interés en oportunidades como desarrollador web dentro de {empresa}. 
+
+Soy Full Stack Developer con experiencia en PHP/Laravel, JavaScript, React, Next.js y desarrollo de sistemas web.
 
 Adjunto mi currículum, donde encontrará más información sobre mi experiencia, habilidades técnicas y proyectos realizados.
 
