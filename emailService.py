@@ -39,12 +39,17 @@ def send_emails(data):
                 body = f"""\
 Estimado/a,
 
-Me comunico con ustedes para expresar mi interes en una vacante de programador en {empresa}.
-Adjunto mi curriculum donde detallo mi experiencia laboral, habilidades y proyectos anteriores.
+Espero que se encuentre bien.
 
-Estoy a disposicion para coordinar una entrevista o llamada telefonica en caso de que requiera mas informacion.
+Me gustaría expresar mi interés en oportunidades como desarrollador dentro de {empresa}. Soy Full Stack Developer con experiencia en PHP/Laravel, JavaScript, React, Next.js y desarrollo de sistemas web.
 
-Atentamente,
+Adjunto mi currículum, donde encontrará más información sobre mi experiencia, habilidades técnicas y proyectos realizados.
+
+Quedo a disposición para coordinar una entrevista o llamada en caso de que mi perfil pueda encajar en oportunidades actuales o futuras.
+
+Muchas gracias por su tiempo.
+
+Saludos cordiales,
 Lionel Cassar
 """
                 msg = EmailMessage()
